@@ -91,11 +91,12 @@ proc calculate_white_settings {pattern width extra gap gaps patterns_array key} 
 	upvar #0 $patterns_array PATTERNS
 	while {$extra > 0} {
 		set position 0
-		while {$gap
+		while {$gap < $gaps} {
+		}
 	}
 }
 
-proc analyze_dimension_new {settings_array width patterns_array} {
+proc analyze_dimension {settings_array width patterns_array} {
 	global CONFIG
 	upvar #0 $settings_array SETTINGS
 	array unset patterns_array
