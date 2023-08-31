@@ -75,6 +75,15 @@ proc get_settings {} {
 	}
 }
 
+proc sum {setting} {
+	set cells 0
+	foreach block $setting {
+		incr cells $block
+	}
+	return $cells
+}
+
+
 proc combine {white_setting black_setting} {
 	global CONFIG
 	set max [llength $white_setting]
@@ -96,16 +105,51 @@ proc calculate_white_settings {pattern width extra gap gaps patterns_array key} 
 	}
 }
 
+proc build_white_settings {setting position max_position extra_white_space} {
+puts "P build_white_settings {$setting} $position $max_position $extra_white_space"
+	set white_settings {}
+set x 0
+	while {$extra_white_space >= 0} {
+		set white_space 0
+		if {$position ni [list 0 $max_position]} {
+			incr white_space 1
+		}
+		if {$extra_white_space > 0} {
+			incr white_space
+			incr extra_white_space -1
+		}
+puts "ws = $white_space"
+		set setting [lreplace $setting $position $position $white_space]
+		if {$position == $max_position} {
+			lappend white_settings $setting
+			break
+		} {
+			set next_position [expr {$position + 1}]
+			set more_settings [build_white_settings $setting $next_position $max_position $extra_white_space]
+			lappend white_settings $more_settings
+		}
+if {$x == 2} exit
+incr x
+	}
+	return $white_settings
+}
+
 proc analyze_dimension {settings_array width patterns_array} {
-	global CONFIG
+	global CONFIG white_settings
 	upvar #0 $settings_array SETTINGS
-	array unset patterns_array
+	upvar #0 $patterns_array PATTERNS
 	foreach key [array names SETTINGS] {
 		set black_setting $SETTINGS($key)
-		set white_setting [build_white_setting $black_setting]
-		set pattern [build $setting]
-		set extra [expr {$width [string length $pattern]}]
-		calculate_patterns $pattern $width $extra 0 $gaps $patterns_array $key
+puts "BS = $black_setting"
+		set extra_white_space [expr {$width - [sum $black_setting] - [llength $black_setting] + 1}]
+		set white_settings [build_white_settings {} 0 [llength black_setting] $extra_white_space]
+puts "WS = $white_settings"
+exit
+		set pattern 0
+		foreach white_setting $white_settings {
+			set PATTERNS($key,$pattern) [combine $white_setting $black_setting]
+			incr pattern
+		}
 	}
 }
 
@@ -125,7 +169,6 @@ proc analyze {settings_array width patterns_array} {
 	global CONFIG
 	upvar #0 $settings_array SETTINGS
 	upvar #0 $patterns_array PATTERNS
-	array unset patterns_array
 	foreach key [array names SETTINGS] {
 		set setting $SETTINGS($key)
 		set pattern [build $setting]
@@ -143,8 +186,10 @@ proc analyze {settings_array width patterns_array} {
 
 proc analyze_settings {} {
 	global CONFIG
-	analyze ROW_SETTINGS $CONFIG(columns) ROW
-	analyze COLUMN_SETTINGS $CONFIG(rows) COLUMN
+	# analyze ROW_SETTINGS $CONFIG(columns) ROW
+	# analyze COLUMN_SETTINGS $CONFIG(rows) COLUMN
+	analyze_dimension ROW_SETTINGS $CONFIG(columns) ROW
+	analyze_dimension COLUMN_SETTINGS $CONFIG(rows) COLUMN
 }
 
 proc initialize_matrix {} {
