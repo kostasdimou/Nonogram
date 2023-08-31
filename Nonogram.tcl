@@ -31,16 +31,31 @@
 # 
 
 proc parse_arguments {arguments} {
+	global CONFIG
+	set next -
+	foreach argument $arguments {
+		switch -- $next {
+			- {
+				switch -- $argument {
+					-d {set CONFIG(debug) 1}
+				}
+			}
+		}
+	}
+	puts ""
+	parray CONFIG
 }
 
 proc get_settings {} {
 	global CONFIG ROW_SETTINGS COLUMN_SETTINGS
 
 	# get dimensions
+	puts ""
 	puts -nonewline "rows = "; set CONFIG(rows) [gets stdin]
 	puts -nonewline "columns = "; set CONFIG(columns) [gets stdin]
 
 	# get row settings
+	puts ""
 	for {set r 0} {$r < $CONFIG(rows)} {incr r} {
 		puts -nonewline "row($r) = "; set ROW_SETTINGS($r) [gets stdin]
 	}
@@ -50,6 +65,7 @@ proc get_settings {} {
 	}
 
 	# get column settings
+	puts ""
 	for {set c 0} {$c < $CONFIG(columns)} {incr c} {
 		puts -nonewline "column($c) = "; set COLUMN_SETTINGS($c) [gets stdin]
 	}
@@ -59,12 +75,37 @@ proc get_settings {} {
 	}
 }
 
-proc sum {setting} {
-	set cells 0
-	foreach block $setting {
-		incr cells $block
+proc combine {white_setting black_setting} {
+	global CONFIG
+	set max [llength $white_setting]
+	set pattern {}
+	for {set i 0} {$i < $max} {incr i} {
+		append pattern [string repeat $CONFIG(white) [lindex $white_setting $i]]
+		append pattern [string repeat $CONFIG(black) [lindex $black_setting $i]]
 	}
-	return $cells
+	append pattern [string repeat $CONFIG(white) [lindex $white_setting $i]]
+	return $pattern
+}
+
+proc calculate_white_settings {pattern width extra gap gaps patterns_array key} {
+	upvar #0 $patterns_array PATTERNS
+	while {$extra > 0} {
+		set position 0
+		while {$gap
+	}
+}
+
+proc analyze_dimension_new {settings_array width patterns_array} {
+	global CONFIG
+	upvar #0 $settings_array SETTINGS
+	array unset patterns_array
+	foreach key [array names SETTINGS] {
+		set black_setting $SETTINGS($key)
+		set white_setting [build_white_setting $black_setting]
+		set pattern [build $setting]
+		set extra [expr {$width [string length $pattern]}]
+		calculate_patterns $pattern $width $extra 0 $gaps $patterns_array $key
+	}
 }
 
 proc build {setting} {
@@ -77,9 +118,6 @@ proc build {setting} {
 		append pattern [string repeat $CONFIG(black) $block]
 	}
 	return $pattern
-}
-
-proc calculate_patterns {pattern width extra gap} {
 }
 
 proc analyze {settings_array width patterns_array} {
@@ -191,6 +229,7 @@ proc resolve_matrix {} {
 		}
 		array set PREVIOUS [array get MATRIX]
 		for {set r 0} {$r < $CONFIG(rows)} {incr r} {
+puts ""
 			set pattern [string repeat $CONFIG(guess) $CONFIG(columns)]
 			foreach key [array names ROW $r,*] {
 puts "key = $key row = $ROW($key)"
@@ -217,7 +256,7 @@ puts "V pattern = $pattern"
 array set CONFIG {
 	black "#"
 	columns 0
-	debug 1
+	debug 0
 	failed "-"
 	guess "?"
 	rows 0
